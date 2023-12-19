@@ -1,0 +1,80 @@
+enum ai_trading_result {
+  WIN
+  LOSS
+  DRAW
+}
+
+enum ai_trading_status {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+model ai_trading_plan {
+  id                       Int                        @id @default(autoincrement())
+  name                     String                     @unique
+  title                    String
+  description              String?                    @db.Text
+  image                    String?                    @db.VarChar(1000)
+  status                   Boolean?                   @default(false)
+  invested                 Int                        @default(0)
+  profit_percentage        Float                      @default(0.00)
+  min_profit               Float
+  max_profit               Float
+  min_amount               Float                      @default(0.00)
+  max_amount               Float
+  trending                 Boolean?                   @default(false)
+  default_profit           Float
+  default_result           ai_trading_result
+  ai_trading               ai_trading[]
+  ai_trading_plan_duration ai_trading_plan_duration[]
+}
+
+model ai_trading {
+  id          Int                  @id @default(autoincrement())
+  uuid        String               @unique
+  user_id     Int
+  user        user                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "ai_trading_user_id_foreign")
+  plan_id     Int
+  plan        ai_trading_plan      @relation(fields: [plan_id], references: [id], onDelete: Cascade, map: "ai_trading_plan_id_foreign")
+  duration_id Int?
+  duration    ai_trading_duration? @relation(fields: [duration_id], references: [id], onDelete: Cascade, map: "ai_trading_duration_id_foreign")
+  market      String
+  amount      Float
+  profit      Float?
+  result      ai_trading_result?
+  status      ai_trading_status    @default(ACTIVE)
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
+
+  @@index([user_id], map: "ai_trading_user_id_foreign")
+  @@index([plan_id], map: "ai_trading_plan_id_foreign")
+  @@index([duration_id], map: "ai_trading_duration_id_foreign")
+}
+
+model ai_trading_duration {
+  id                       Int                        @id @default(autoincrement())
+  duration                 Int
+  timeframe                ai_trading_timeframe
+  ai_trading_plan_duration ai_trading_plan_duration[]
+  ai_trading               ai_trading[]
+}
+
+enum ai_trading_timeframe {
+  HOUR
+  DAY
+  WEEK
+  MONTH
+}
+
+model ai_trading_plan_duration {
+  id          Int                 @id @default(autoincrement())
+  plan_id     Int
+  plan        ai_trading_plan     @relation(fields: [plan_id], references: [id], onDelete: Cascade, map: "ai_trading_plan_duration_plan_id_foreign")
+  duration_id Int
+  duration    ai_trading_duration @relation(fields: [duration_id], references: [id], onDelete: Cascade, map: "ai_trading_plan_duration_duration_id_foreign")
+
+  @@index([plan_id], map: "ai_trading_plan_duration_plan_id_foreign")
+  @@index([duration_id], map: "ai_trading_plan_duration_duration_id_foreign")
+}
